@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 905307526647539107}
   - component: {fileID: 3840256017706795115}
   - component: {fileID: 7711785229875793520}
+  - component: {fileID: -679054412420269043}
   m_Layer: 0
   m_Name: Idle (32x32)_0
   m_TagString: Untagged
@@ -138,3 +139,16 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.5625, y: 1.5625}
   m_EdgeRadius: 0
+--- !u!114 &-679054412420269043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 450986480415439139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b579306c1a10a6e47a4c46295d2767aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol
+  m_FrontCheck: {fileID: 0}
