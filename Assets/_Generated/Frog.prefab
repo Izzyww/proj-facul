@@ -188,7 +188,7 @@ MonoBehaviour:
   - {fileID: 7088101548298323720, guid: 0387ef44f0cf5934e8700f97a2f2913d, type: 3}
   - {fileID: -4743388124831816668, guid: bb732264c1964b6488c39a95da75dba8, type: 3}
   - {fileID: 379554669094847015, guid: 9b4eb32fd02ee364db1e1477824b7919, type: 3}
-  m_PatrolSpeed: 2
+  m_PatrolSpeed: 2.2
   m_FacesLeft: 0
 --- !u!114 &2745017270099805971
 MonoBehaviour:

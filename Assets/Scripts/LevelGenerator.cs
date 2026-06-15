@@ -42,6 +42,10 @@ public class LevelGenerator : MonoBehaviour
     [Header("HUD")]
     public Sprite m_LifeSprite;
 
+    [Header("Audio")]
+    public AudioClip m_IntroMusic;
+    public AudioClip[] m_LevelMusic; // 0=fase1, 1=fase2, 2=chefe
+
     private const int OrderBackground = -100;
     private const int OrderTree = -70;
     private const int OrderShadow = -60;
@@ -91,6 +95,10 @@ public class LevelGenerator : MonoBehaviour
 
         BuildLevelData();
         LevelTransition.GetOrCreate();
+        AudioManager.GetOrCreate();
+
+        // Tela inicial (so na primeira vez): pausa o jogo ate o jogador clicar.
+        IntroScreen.ShowOnce(m_IntroMusic);
 
         LivesHUD hud = LivesHUD.GetOrCreate();
         if (m_LifeSprite != null)
@@ -285,6 +293,24 @@ public class LevelGenerator : MonoBehaviour
         {
             BuildTileLevel(m_Levels[levelIndex]);
         }
+
+        // A musica so entra depois da intro (a intro toca a propria faixa).
+        if (!IntroScreen.IsActive)
+        {
+            PlayCurrentMusic();
+        }
+    }
+
+    // Toca a trilha da fase atual (chamada pela intro ao clicar "continuar").
+    public void PlayCurrentMusic()
+    {
+        if (AudioManager.Instance == null || m_LevelMusic == null || m_LevelMusic.Length == 0)
+        {
+            return;
+        }
+
+        int idx = Mathf.Clamp(m_CurrentLevel, 0, m_LevelMusic.Length - 1);
+        AudioManager.Instance.PlayBgm(m_LevelMusic[idx]);
     }
 
     // ─────────────────────────────────────────────────────────────────

@@ -14,7 +14,9 @@ public class PlayerAnimation : MonoBehaviour
         LookUp,
         Roll,
         Hurt,
-        Dead
+        Dead,
+        WallGrab,   // agarrado em parede a direita (olhando pra direita)
+        WallGrab2   // agarrado em parede a esquerda (olhando pra esquerda)
     }
 
     [SerializeField] private Sprite[] m_IdleSprites;
@@ -25,6 +27,8 @@ public class PlayerAnimation : MonoBehaviour
     [SerializeField] private Sprite[] m_RollSprites;
     [SerializeField] private Sprite[] m_HurtSprites;
     [SerializeField] private Sprite[] m_DeadSprites;
+    [SerializeField] private Sprite[] m_WallGrabSprites;
+    [SerializeField] private Sprite[] m_WallGrab2Sprites;
 
     private SpriteRenderer m_SpriteRenderer;
     private State m_State = State.Idle;
@@ -112,6 +116,8 @@ public class PlayerAnimation : MonoBehaviour
             case State.Roll: return Pick(m_RollSprites, m_RunSprites);
             case State.Hurt: return Pick(m_HurtSprites, m_IdleSprites);
             case State.Dead: return Pick(m_DeadSprites, m_HurtSprites);
+            case State.WallGrab: return Pick(m_WallGrabSprites, m_IdleSprites);
+            case State.WallGrab2: return Pick(m_WallGrab2Sprites, m_WallGrabSprites);
             default: return m_IdleSprites;
         }
     }

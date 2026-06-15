@@ -188,7 +188,7 @@ MonoBehaviour:
   - {fileID: 7088101548298323720, guid: 0387ef44f0cf5934e8700f97a2f2913d, type: 3}
   - {fileID: -4743388124831816668, guid: bb732264c1964b6488c39a95da75dba8, type: 3}
   - {fileID: 379554669094847015, guid: 9b4eb32fd02ee364db1e1477824b7919, type: 3}
-  m_PatrolSpeed: 2
+  m_PatrolSpeed: 4
   m_FacesLeft: 1
 --- !u!114 &941992976099961278
 MonoBehaviour:
@@ -209,7 +209,7 @@ MonoBehaviour:
   - {fileID: -4348611725909519148, guid: 875f0a3b503307b418071b7dbf028164, type: 3}
   - {fileID: -5723099352731319867, guid: a5f18cd1cdd151249b46bff67d9d105c, type: 3}
   - {fileID: 8717208930057366159, guid: 54cf9a8a11b5f384c92fe6469812aa18, type: 3}
-  m_FramesPerSecond: 12
+  m_FramesPerSecond: 14
 --- !u!1 &879890818281989932
 GameObject:
   m_ObjectHideFlags: 0

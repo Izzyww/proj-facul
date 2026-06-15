@@ -48,6 +48,8 @@ public class PlayerHealth : MonoBehaviour
 
         int remaining = GameManager.Instance != null ? GameManager.Instance.LoseLife() : 0;
 
+        AudioManager.Play(AudioManager.Sfx.Hurt);
+
         float dir = Mathf.Sign(transform.position.x - sourcePosition.x);
         if (dir == 0f)
         {

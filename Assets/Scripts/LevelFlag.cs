@@ -19,6 +19,7 @@ public class LevelFlag : MonoBehaviour
         }
 
         m_Triggered = true;
+        AudioManager.Play(AudioManager.Sfx.Win);
 
         if (LevelGenerator.Instance != null)
         {

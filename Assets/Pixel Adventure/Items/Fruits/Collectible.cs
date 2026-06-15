@@ -38,6 +38,7 @@ public class Collectible : MonoBehaviour
             GameManager.Instance.AddScore(1);
         }
 
+        AudioManager.Play(AudioManager.Sfx.Coin);
         OneShotVfx.Spawn(transform.position, m_PickupFrames, 16f, 0.4f, new Vector2(0f, 1f), 6, 1f);
         Destroy(gameObject);
     }

@@ -1,12 +1,15 @@
 using UnityEngine;
 
-// Movimento da raposa: andar, pular (com pulo variavel e pulo duplo opcional),
-// olhar pra cima (W) e rolar (S correndo). O roll mata inimigos e da invencibilidade.
-// Quando machucado/morto o controle e travado e a animacao certa toca.
+// Movimento da raposa: correr, andar (Shift = devagar), pular (com pulo variavel
+// e pulo duplo opcional), olhar pra cima (W) e rolar (S correndo). O roll mata
+// inimigos e da invencibilidade. Tambem agarra parede (wall-grab): encostando na
+// parede + W ele gruda; segurando a direcao continua grudado; soltando a direcao
+// ele cai; pulo enquanto grudado lanca pra longe da parede.
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
     private float m_MoveSpeed = 7f;
+    private float m_WalkSpeed = 3.2f; // com Shift
     private float m_JumpForce = 14f;
     private float m_JumpCutMultiplier = 0.5f;
 
@@ -14,15 +17,22 @@ public class PlayerController : MonoBehaviour
     private float m_RollDuration = 0.4f;
     private float m_RollCooldown = 0.7f;
 
+    private float m_WallJumpX = 11f;
+    private float m_WallJumpY = 14f;
+    private float m_WallJumpLockTime = 0.22f;
+
     [SerializeField] private Transform m_GroundCheck;
     [SerializeField] private float m_GroundCheckRadius = 0.2f;
 
     private Rigidbody2D m_Rigidbody2D;
     private SpriteRenderer m_SpriteRenderer;
     private PlayerAnimation m_Animation;
+    private BoxCollider2D m_Box;
     private LayerMask m_GroundLayer;
+    private float m_DefaultGravity;
 
     private float m_MoveInput;
+    private float m_CurrentSpeed;
     private bool m_FacingRight = true;
     private bool m_AllowDoubleJump;
     private int m_JumpsLeft;
@@ -33,6 +43,10 @@ public class PlayerController : MonoBehaviour
     private float m_RollTimer;
     private float m_RollCooldownTimer;
     private int m_RollDir = 1;
+
+    private bool m_WallGrabbing;
+    private int m_WallSide; // +1 parede a direita, -1 parede a esquerda
+    private float m_WallJumpLock;
 
     private float m_HurtTimer;
     private bool m_Dead;
@@ -47,7 +61,10 @@ public class PlayerController : MonoBehaviour
         m_Rigidbody2D = GetComponent<Rigidbody2D>();
         m_SpriteRenderer = GetComponent<SpriteRenderer>();
         m_Animation = GetComponent<PlayerAnimation>();
+        m_Box = GetComponent<BoxCollider2D>();
         m_GroundLayer = LayerMask.GetMask("Ground");
+        m_DefaultGravity = m_Rigidbody2D.gravityScale;
+        m_CurrentSpeed = m_MoveSpeed;
         Current = this;
     }
 
@@ -73,6 +90,7 @@ public class PlayerController : MonoBehaviour
 
         m_HurtTimer = stun;
         m_Rolling = false;
+        m_WallGrabbing = false;
         if (m_Animation != null)
         {
             m_Animation.SetState(PlayerAnimation.State.Hurt);
@@ -83,6 +101,7 @@ public class PlayerController : MonoBehaviour
     {
         m_Dead = true;
         m_Rolling = false;
+        m_WallGrabbing = false;
         if (m_Animation != null)
         {
             m_Animation.SetState(PlayerAnimation.State.Dead);
@@ -94,6 +113,11 @@ public class PlayerController : MonoBehaviour
         if (m_RollCooldownTimer > 0f)
         {
             m_RollCooldownTimer -= Time.deltaTime;
+        }
+
+        if (m_WallJumpLock > 0f)
+        {
+            m_WallJumpLock -= Time.deltaTime;
         }
 
         if (m_Dead)
@@ -122,13 +146,25 @@ public class PlayerController : MonoBehaviour
         }
 
         ReadInput();
-        UpdateFacing();
-        UpdateAnimationState();
+        UpdateWallGrab();
+
+        if (m_WallGrabbing)
+        {
+            ApplyWallGrabVisual();
+        }
+        else
+        {
+            UpdateFacing();
+            UpdateAnimationState();
+        }
     }
 
     private void ReadInput()
     {
         m_MoveInput = Input.GetAxisRaw("Horizontal");
+
+        bool walk = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        m_CurrentSpeed = walk ? m_WalkSpeed : m_MoveSpeed;
 
         if (Input.GetButtonDown("Jump"))
         {
@@ -156,6 +192,72 @@ public class PlayerController : MonoBehaviour
         m_RollCooldownTimer = m_RollCooldown;
         m_RollDir = m_FacingRight ? 1 : -1;
         m_Animation.SetState(PlayerAnimation.State.Roll);
+    }
+
+    // ── Wall grab ─────────────────────────────────────────────────────
+    private void UpdateWallGrab()
+    {
+        bool grounded = IsGrounded();
+        int wall = DetectWall();
+
+        bool up = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) || Input.GetAxisRaw("Vertical") > 0.5f;
+        bool pushingInto = (wall > 0 && m_MoveInput > 0.1f) || (wall < 0 && m_MoveInput < -0.1f);
+
+        if (!m_WallGrabbing)
+        {
+            // Inicia agarrando: no ar, encostado na parede, empurrando contra ela e segurando W.
+            if (!grounded && wall != 0 && pushingInto && up && m_WallJumpLock <= 0f)
+            {
+                m_WallGrabbing = true;
+                m_WallSide = wall;
+            }
+        }
+        else
+        {
+            // Mantem enquanto continuar empurrando pra parede (W ja nao e necessario).
+            bool stillPushing = (m_WallSide > 0 && m_MoveInput > 0.1f) || (m_WallSide < 0 && m_MoveInput < -0.1f);
+            if (grounded || DetectWall() != m_WallSide || !stillPushing)
+            {
+                m_WallGrabbing = false;
+            }
+        }
+    }
+
+    private void ApplyWallGrabVisual()
+    {
+        m_FacingRight = m_WallSide > 0;
+        if (m_SpriteRenderer != null)
+        {
+            m_SpriteRenderer.flipX = false; // os sprites wall-grab1/2 ja olham pro lado certo
+        }
+
+        m_Animation.SetState(m_WallSide > 0
+            ? PlayerAnimation.State.WallGrab
+            : PlayerAnimation.State.WallGrab2);
+    }
+
+    private int DetectWall()
+    {
+        if (m_Box == null)
+        {
+            return 0;
+        }
+
+        Bounds b = m_Box.bounds;
+        float dist = b.extents.x + 0.08f;
+        Vector2 mid = new Vector2(b.center.x, b.center.y);
+
+        if (Physics2D.Raycast(mid, Vector2.right, dist, m_GroundLayer).collider != null)
+        {
+            return 1;
+        }
+
+        if (Physics2D.Raycast(mid, Vector2.left, dist, m_GroundLayer).collider != null)
+        {
+            return -1;
+        }
+
+        return 0;
     }
 
     private void UpdateFacing()
@@ -216,11 +318,19 @@ public class PlayerController : MonoBehaviour
 
         if (m_Rolling)
         {
+            m_Rigidbody2D.gravityScale = m_DefaultGravity;
             m_Rigidbody2D.linearVelocity = new Vector2(m_RollDir * m_RollSpeed, m_Rigidbody2D.linearVelocity.y);
             return;
         }
 
-        m_Rigidbody2D.linearVelocity = new Vector2(m_MoveInput * m_MoveSpeed, m_Rigidbody2D.linearVelocity.y);
+        if (m_WallGrabbing)
+        {
+            WallGrabPhysics();
+            return;
+        }
+
+        m_Rigidbody2D.gravityScale = m_DefaultGravity;
+        m_Rigidbody2D.linearVelocity = new Vector2(m_MoveInput * m_CurrentSpeed, m_Rigidbody2D.linearVelocity.y);
 
         bool grounded = IsGrounded();
         if (grounded && m_Rigidbody2D.linearVelocity.y <= 0.01f)
@@ -230,9 +340,11 @@ public class PlayerController : MonoBehaviour
 
         if (m_JumpQueued && m_JumpsLeft > 0)
         {
+            bool isDouble = (m_AllowDoubleJump && m_JumpsLeft == 1);
             m_Rigidbody2D.linearVelocity = new Vector2(m_Rigidbody2D.linearVelocity.x, 0f);
             m_Rigidbody2D.AddForce(Vector2.up * m_JumpForce, ForceMode2D.Impulse);
             m_JumpsLeft--;
+            AudioManager.Play(isDouble ? AudioManager.Sfx.DoubleJump : AudioManager.Sfx.Jump);
         }
         m_JumpQueued = false;
 
@@ -247,6 +359,28 @@ public class PlayerController : MonoBehaviour
 
             m_JumpReleased = false;
         }
+    }
+
+    private void WallGrabPhysics()
+    {
+        // Pulo de parede: lanca pra cima e pro lado oposto da parede.
+        if (m_JumpQueued)
+        {
+            m_WallGrabbing = false;
+            m_WallJumpLock = m_WallJumpLockTime;
+            m_Rigidbody2D.gravityScale = m_DefaultGravity;
+            m_Rigidbody2D.linearVelocity = new Vector2(-m_WallSide * m_WallJumpX, m_WallJumpY);
+            m_JumpsLeft = m_AllowDoubleJump ? 1 : 0;
+            m_JumpQueued = false;
+            AudioManager.Play(AudioManager.Sfx.WallJump);
+            return;
+        }
+
+        // Grudado: sem gravidade, parado na parede.
+        m_Rigidbody2D.gravityScale = 0f;
+        m_Rigidbody2D.linearVelocity = Vector2.zero;
+        m_JumpQueued = false;
+        m_JumpReleased = false;
     }
 
     private bool IsGrounded()

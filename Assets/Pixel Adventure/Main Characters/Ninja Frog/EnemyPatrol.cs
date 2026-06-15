@@ -125,6 +125,7 @@ public class EnemyPatrol : MonoBehaviour
     private void Die(Rigidbody2D playerBody)
     {
         m_Dead = true;
+        AudioManager.Play(AudioManager.Sfx.Stomp);
         OneShotVfx.Spawn(m_Transform.position, m_DeathFrames, 14f, 0.5f, Vector2.zero, 1, 1f);
 
         if (playerBody != null)

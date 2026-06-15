@@ -318,6 +318,10 @@ MonoBehaviour:
   - {fileID: 7638589178004061137, guid: 723f40bba4c9981428bdc50ec6b38a8e, type: 3}
   m_DeadSprites:
   - {fileID: -2333354213399122803, guid: 82981de480b189440939c954910eb51c, type: 3}
+  m_WallGrabSprites:
+  - {fileID: 8499007386604382761, guid: c661dc1f6f9070141b5ed2b0bf5f5728, type: 3}
+  m_WallGrab2Sprites:
+  - {fileID: -4911466134572460140, guid: 116d3c817d5ab49408c2f8e07122adba, type: 3}
 --- !u!114 &5573828453725519767
 MonoBehaviour:
   m_ObjectHideFlags: 0

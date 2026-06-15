@@ -247,6 +247,7 @@ public class EagleBoss : MonoBehaviour
     {
         m_Hits++;
         RefreshHpBar();
+        AudioManager.Play(AudioManager.Sfx.BossHit);
 
         if (playerBody != null)
         {

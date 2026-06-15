@@ -62,8 +62,8 @@ public static class LevelBuilder
         GameObject solidPrefab = MakeSolid();
         GameObject spikePrefab = MakeSpike(FirstSprite(SpikeSheet));
         GameObject[] fruitPrefabs = MakeFruits(pickupFrames);
-        GameObject frogPrefab = MakeEnemy("Frog", SortedSprites(FrogSheet), deathFrames, shadow, 10f, false);
-        GameObject opossumPrefab = MakeEnemy("Opossum", LoadSeq(SL + "Characters/Opossum/opossum/opossum-", 6), deathFrames, shadow, 12f, true);
+        GameObject frogPrefab = MakeEnemy("Frog", SortedSprites(FrogSheet), deathFrames, shadow, 10f, false, 2.2f);
+        GameObject opossumPrefab = MakeEnemy("Opossum", LoadSeq(SL + "Characters/Opossum/opossum/opossum-", 6), deathFrames, shadow, 14f, true, 4f);
         GameObject fallingHeadPrefab = MakeFallingHead(FirstSprite(SpikeHeadSheet));
         GameObject swingPrefab = MakeSwing(FirstSprite(ChainSheet), FirstSprite(BallSheet), block);
         GameObject checkpointPrefab = MakeCheckpoint(FirstSprite(CheckpointSheet));
@@ -82,6 +82,16 @@ public static class LevelBuilder
             SL + "environment/Props/rock.png",
             SL + "environment/Props/shrooms.png");
         Sprite sign = LoadSingle(SL + "environment/Props/sign.png");
+
+        // Trilha sonora (o pacote so tem musicas; os SFX sao sintetizados no AudioManager).
+        const string Music = "Assets/SunnyLand Music/";
+        AudioClip introMusic = LoadAudio(Music + "adventure pack 2 ogg/magic cliffs.ogg");
+        AudioClip[] levelMusic =
+        {
+            LoadAudio(Music + "Adventure pack 1 ogg/happywalking.ogg"),
+            LoadAudio(Music + "Adventure pack 1 ogg/exploration.ogg"),
+            LoadAudio(Music + "adventure pack 2 ogg/Maniac.ogg"),
+        };
 
         LevelGenerator lg = Object.FindFirstObjectByType<LevelGenerator>();
         if (lg == null)
@@ -107,6 +117,8 @@ public static class LevelBuilder
         lg.m_GroundProps = groundProps;
         lg.m_SignSprite = sign;
         lg.m_LifeSprite = life;
+        lg.m_IntroMusic = introMusic;
+        lg.m_LevelMusic = levelMusic;
 
         EditorUtility.SetDirty(lg);
         EditorSceneManager.MarkSceneDirty(lg.gameObject.scene);
@@ -182,7 +194,7 @@ public static class LevelBuilder
         return SaveAndClean(temp, name);
     }
 
-    private static GameObject MakeEnemy(string name, Sprite[] frames, Sprite[] deathFrames, Sprite shadow, float fps, bool facesLeft)
+    private static GameObject MakeEnemy(string name, Sprite[] frames, Sprite[] deathFrames, Sprite shadow, float fps, bool facesLeft, float speed)
     {
         GameObject temp = new GameObject(name);
         SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
@@ -208,6 +220,7 @@ public static class LevelBuilder
         EnemyPatrol patrol = temp.AddComponent<EnemyPatrol>();
         patrol.m_DeathFrames = deathFrames;
         patrol.m_FacesLeft = facesLeft;
+        patrol.m_PatrolSpeed = speed;
 
         if (frames != null && frames.Length > 0)
         {
@@ -374,6 +387,8 @@ public static class LevelBuilder
         Sprite[] roll = LoadSeqAbs(FoxySprites + "Roll/Roll", 1, 4);
         Sprite[] hurt = LoadSeqAbs(FoxySprites + "hurt/player-hurt-", 1, 2);
         Sprite dead = LoadSingle(FoxySprites + "Hurt2/hurt-2.png");
+        Sprite wallGrab1 = LoadSingle(FoxySprites + "WallGrab/wall-grab1.png");
+        Sprite wallGrab2 = LoadSingle(FoxySprites + "WallGrab/wall-grab2.png");
 
         SerializedObject so = new SerializedObject(anim);
         SetSprites(so, "m_IdleSprites", idle);
@@ -384,6 +399,8 @@ public static class LevelBuilder
         SetSprites(so, "m_RollSprites", roll);
         SetSprites(so, "m_HurtSprites", hurt);
         SetSprites(so, "m_DeadSprites", dead != null ? new[] { dead } : null);
+        SetSprites(so, "m_WallGrabSprites", wallGrab1 != null ? new[] { wallGrab1 } : null);
+        SetSprites(so, "m_WallGrab2Sprites", wallGrab2 != null ? new[] { wallGrab2 } : null);
         so.ApplyModifiedPropertiesWithoutUndo();
 
         SpriteRenderer sr = root.GetComponent<SpriteRenderer>();
@@ -514,6 +531,17 @@ public static class LevelBuilder
     private static Sprite LoadSingle(string path)
     {
         return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+    }
+
+    private static AudioClip LoadAudio(string path)
+    {
+        AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+        if (clip == null)
+        {
+            Debug.LogWarning("LevelBuilder: musica nao encontrada em " + path);
+        }
+
+        return clip;
     }
 
     private static Sprite[] SortedSprites(string sheetPath)
