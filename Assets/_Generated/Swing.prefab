@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8458370746402955108
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5852632634943826038}
+  - component: {fileID: 1365290943090072996}
+  m_Layer: 0
+  m_Name: Swing
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5852632634943826038
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8458370746402955108}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1365290943090072996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8458370746402955108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc51f5a4a8196ae47b68b8780d6e5419, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SwingingHazard
+  m_ChainSprite: {fileID: -8566028455312386561, guid: 838015c41d7926e46b33356a9a1dc5f5, type: 3}
+  m_BallSprite: {fileID: -8422906301337073237, guid: d1657883a513a7048a18464a8356f00c, type: 3}
+  m_AnchorSprite: {fileID: 5865670524570963042, guid: aa5a93a6699da18469574f6dd18c4b30, type: 3}
+  m_Length: 3
+  m_MaxAngleDeg: 55
+  m_Speed: 2
+  m_ChainLinks: 6
+  m_PhaseOffset: 0
+  m_Spin: 0

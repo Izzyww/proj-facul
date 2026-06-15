@@ -5,22 +5,45 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// Constroi todos os prefabs do nivel a partir dos sprites reais (Pixel Adventure
-// + Sunny Land), faz autotiling de grama, sombras, animacoes, ajusta o prefab da
-// raposa (gravidade/collider/vida/poeira) e conecta tudo no LevelGenerator.
+// Constroi todos os prefabs (chao, plataformas, espinhos, frutas, inimigos,
+// traps, checkpoint, aguia) a partir dos sprites reais e conecta tudo no
+// LevelGenerator da cena. Tambem ajusta o prefab da raposa (fisica, vida,
+// poeira, sombra) e preenche todas as animacoes (idle/run/jump/lookup/roll/hurt).
+// Um clique: Tools/Level/Construir Nivel (Auto-Setup).
 public static class LevelBuilder
 {
     private const string GeneratedFolder = "Assets/_Generated";
 
-    private const string TerrainSheet = "Assets/Pixel Adventure/Terrain/Terrain (16x16).png";
-    private const string SpikeSheet = "Assets/Pixel Adventure/Traps/Spikes/Idle.png";
-    private const string FlagSheet = "Assets/Pixel Adventure/Items/Checkpoints/End/End (Idle).png";
-    private const string FruitSheet = "Assets/Pixel Adventure/Items/Fruits/Apple.png";
-    private const string BackgroundSheet = "Assets/Pixel Adventure/Background/Green.png";
-    private const string EnemySheet = "Assets/Pixel Adventure/Main Characters/Ninja Frog/Idle (32x32).png";
-    private const string ShadowSheet = "Assets/Pixel Adventure/Other/Shadow.png";
-    private const string DustSheet = "Assets/Pixel Adventure/Other/Dust Particle.png";
-    private const string PlayerPrefab = "Assets/Sunny Land/Characters/Foxy/player-idle-1_0.prefab";
+    private const string PA = "Assets/Pixel Adventure/";
+    private const string SL = "Assets/Sunny Land/";
+
+    private const string TerrainSheet = PA + "Terrain/Terrain (16x16).png";
+    private const string SpikeSheet = PA + "Traps/Spikes/Idle.png";
+    private const string CheckpointSheet = PA + "Items/Checkpoints/Checkpoint/Checkpoint (No Flag).png";
+    private const string FrogSheet = PA + "Main Characters/Ninja Frog/Idle (32x32).png";
+    private const string SpikeHeadSheet = PA + "Traps/Spike Head/Idle.png";
+    private const string BallSheet = PA + "Traps/Spiked Ball/Spiked Ball.png";
+    private const string ChainSheet = PA + "Traps/Spiked Ball/Chain.png";
+    private const string CherriesSheet = PA + "Items/Fruits/Cherries.png";
+
+    private const string ShadowSheet = PA + "Other/Shadow.png";
+    private const string DustSheet = PA + "Other/Dust Particle.png";
+
+    private const string EagleSheet = SL + "Characters/eagle/Sprites/attack/eagle-attack-";
+    private const string SkyBg = SL + "environment/Background/back.png";
+    private const string PlayerPrefab = SL + "Characters/Foxy/player-idle-1_0.prefab";
+    private const string FoxySprites = SL + "Characters/Foxy/Sprites/";
+
+    private static readonly string[] FruitSheets =
+    {
+        PA + "Items/Fruits/Apple.png",
+        PA + "Items/Fruits/Bananas.png",
+        PA + "Items/Fruits/Orange.png",
+        PA + "Items/Fruits/Strawberry.png",
+        PA + "Items/Fruits/Pineapple.png",
+        PA + "Items/Fruits/Melon.png",
+        PA + "Items/Fruits/Kiwi.png",
+    };
 
     [MenuItem("Tools/Level/Construir Nivel (Auto-Setup)")]
     public static void Build()
@@ -28,23 +51,37 @@ public static class LevelBuilder
         EnsureFolder();
 
         Sprite[] grass = LoadGrassTiles();
-        Sprite spike = FirstSprite(SpikeSheet);
-        Sprite flag = FirstSprite(FlagSheet);
-        Sprite[] fruitFrames = SortedSprites(FruitSheet);
-        Sprite[] enemyFrames = SortedSprites(EnemySheet);
         Sprite shadow = FirstSprite(ShadowSheet);
         Sprite dust = FirstSprite(DustSheet);
-        Sprite background = LoadTiledBackground(BackgroundSheet);
 
-        Sprite[] deathFrames = LoadSeparate("Assets/Sunny Land/Misc/Sunnyland FX/Sprites/enemy-death/enemy-death-", 6);
-        Sprite[] pickupFrames = LoadSeparate("Assets/Sunny Land/Misc/Sunnyland FX/Sprites/item-feedback/item-feedback-", 4);
+        Sprite[] deathFrames = LoadSeq(SL + "Misc/Sunnyland FX/Sprites/enemy-death/enemy-death-", 6);
+        Sprite[] pickupFrames = LoadSeq(SL + "Misc/Sunnyland FX/Sprites/item-feedback/item-feedback-", 4);
+
+        Sprite block = LoadSingle(SL + "environment/Props/block.png");
 
         GameObject solidPrefab = MakeSolid();
-        GameObject spikePrefab = MakeSpike(spike);
-        GameObject fruitPrefab = MakeFruit(fruitFrames, pickupFrames);
-        GameObject flagPrefab = MakeFlag(flag);
-        GameObject enemyPrefab = MakeEnemy(enemyFrames, deathFrames, shadow);
+        GameObject spikePrefab = MakeSpike(FirstSprite(SpikeSheet));
+        GameObject[] fruitPrefabs = MakeFruits(pickupFrames);
+        GameObject frogPrefab = MakeEnemy("Frog", SortedSprites(FrogSheet), deathFrames, shadow, 10f, false);
+        GameObject opossumPrefab = MakeEnemy("Opossum", LoadSeq(SL + "Characters/Opossum/opossum/opossum-", 6), deathFrames, shadow, 12f, true);
+        GameObject fallingHeadPrefab = MakeFallingHead(FirstSprite(SpikeHeadSheet));
+        GameObject swingPrefab = MakeSwing(FirstSprite(ChainSheet), FirstSprite(BallSheet), block);
+        GameObject checkpointPrefab = MakeCheckpoint(FirstSprite(CheckpointSheet));
+        GameObject eaglePrefab = MakeEagle();
         GameObject playerPrefab = TweakPlayer(dust, shadow);
+
+        // Fundo "back" (acompanha a camera) tanto na floresta quanto no chefe.
+        Sprite back = FirstSprite(SkyBg);
+        Sprite life = FirstSprite(CherriesSheet);
+
+        Sprite[] trees = LoadSpriteList(
+            SL + "environment/Props/tree.png",
+            SL + "environment/Props/pine.png");
+        Sprite[] groundProps = LoadSpriteList(
+            SL + "environment/Props/bush.png",
+            SL + "environment/Props/rock.png",
+            SL + "environment/Props/shrooms.png");
+        Sprite sign = LoadSingle(SL + "environment/Props/sign.png");
 
         LevelGenerator lg = Object.FindFirstObjectByType<LevelGenerator>();
         if (lg == null)
@@ -54,13 +91,22 @@ public static class LevelBuilder
 
         lg.m_SolidPrefab = solidPrefab;
         lg.m_GrassTiles = grass;
-        lg.m_SpikePrefab = spikePrefab;
-        lg.m_FruitPrefab = fruitPrefab;
-        lg.m_FlagPrefab = flagPrefab;
-        lg.m_EnemyPrefab = enemyPrefab;
-        lg.m_PlayerPrefab = playerPrefab;
-        lg.m_BackgroundSprite = background;
         lg.m_ShadowSprite = shadow;
+        lg.m_SpikePrefab = spikePrefab;
+        lg.m_FruitPrefabs = fruitPrefabs;
+        lg.m_FrogPrefab = frogPrefab;
+        lg.m_OpossumPrefab = opossumPrefab;
+        lg.m_FallingHeadPrefab = fallingHeadPrefab;
+        lg.m_SwingPrefab = swingPrefab;
+        lg.m_CheckpointPrefab = checkpointPrefab;
+        lg.m_PlayerPrefab = playerPrefab;
+        lg.m_EaglePrefab = eaglePrefab;
+        lg.m_BackgroundSprite = back;
+        lg.m_SkySprite = back;
+        lg.m_TreeSprites = trees;
+        lg.m_GroundProps = groundProps;
+        lg.m_SignSprite = sign;
+        lg.m_LifeSprite = life;
 
         EditorUtility.SetDirty(lg);
         EditorSceneManager.MarkSceneDirty(lg.gameObject.scene);
@@ -70,19 +116,17 @@ public static class LevelBuilder
         Debug.Log("Nivel construido! Salve a cena (Ctrl+S) e de Play.");
     }
 
-    // ── Prefabs ───────────────────────────────────────────────────────
+    // ── Tiles / chao ──────────────────────────────────────────────────
     private static GameObject MakeSolid()
     {
         GameObject temp = new GameObject("Solid");
-        temp.AddComponent<SpriteRenderer>(); // sprite definido por tile no LevelGenerator
-        temp.AddComponent<BoxCollider2D>().size = Vector2.one;
+        temp.AddComponent<SpriteRenderer>();
 
-        int ground = LayerMask.NameToLayer("Ground");
-        if (ground >= 0)
-        {
-            temp.layer = ground;
-        }
+        BoxCollider2D col = temp.AddComponent<BoxCollider2D>();
+        col.size = Vector2.one;
+        col.usedByComposite = true;
 
+        SetLayer(temp, "Ground");
         return SaveAndClean(temp, "Solid");
     }
 
@@ -95,18 +139,36 @@ public static class LevelBuilder
 
         BoxCollider2D col = temp.AddComponent<BoxCollider2D>();
         col.isTrigger = true;
-        col.size = new Vector2(0.8f, 0.35f);
-        col.offset = new Vector2(0f, -0.28f);
+        col.size = new Vector2(0.8f, 0.4f);
+        col.offset = new Vector2(0f, -0.25f);
 
         temp.AddComponent<Hazard>();
         return SaveAndClean(temp, "Spike");
     }
 
-    private static GameObject MakeFruit(Sprite[] frames, Sprite[] pickupFrames)
+    private static GameObject[] MakeFruits(Sprite[] pickupFrames)
     {
-        GameObject temp = new GameObject("Fruit");
+        List<GameObject> list = new List<GameObject>();
+        foreach (string sheet in FruitSheets)
+        {
+            Sprite[] frames = SortedSprites(sheet);
+            if (frames == null || frames.Length == 0)
+            {
+                continue;
+            }
+
+            string name = "Fruit_" + System.IO.Path.GetFileNameWithoutExtension(sheet);
+            list.Add(MakeFruit(name, frames, pickupFrames));
+        }
+
+        return list.ToArray();
+    }
+
+    private static GameObject MakeFruit(string name, Sprite[] frames, Sprite[] pickupFrames)
+    {
+        GameObject temp = new GameObject(name);
         SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
-        sr.sprite = frames != null && frames.Length > 0 ? frames[0] : null;
+        sr.sprite = frames[0];
         sr.sortingOrder = -5;
 
         CircleCollider2D col = temp.AddComponent<CircleCollider2D>();
@@ -117,52 +179,125 @@ public static class LevelBuilder
         collectible.m_PickupFrames = pickupFrames;
 
         temp.AddComponent<SpriteAnimator>().SetFrames(frames, 15f);
-
-        return SaveAndClean(temp, "Fruit");
+        return SaveAndClean(temp, name);
     }
 
-    private static GameObject MakeFlag(Sprite sprite)
+    private static GameObject MakeEnemy(string name, Sprite[] frames, Sprite[] deathFrames, Sprite shadow, float fps, bool facesLeft)
     {
-        GameObject temp = new GameObject("Flag");
+        GameObject temp = new GameObject(name);
         SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        sr.sortingOrder = -5;
-
-        BoxCollider2D col = temp.AddComponent<BoxCollider2D>();
-        col.isTrigger = true;
-        col.size = new Vector2(1.4f, 2.8f);
-
-        temp.AddComponent<LevelFlag>();
-        return SaveAndClean(temp, "Flag");
-    }
-
-    private static GameObject MakeEnemy(Sprite[] frames, Sprite[] deathFrames, Sprite shadow)
-    {
-        GameObject temp = new GameObject("Enemy");
-        SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
-        sr.sprite = frames != null && frames.Length > 0 ? frames[0] : null;
+        Sprite first = (frames != null && frames.Length > 0) ? frames[0] : null;
+        sr.sprite = first;
         sr.sortingOrder = 0;
 
         Rigidbody2D rb = temp.AddComponent<Rigidbody2D>();
         rb.freezeRotation = true;
         rb.gravityScale = 3f;
+        rb.mass = 0.3f; // leve: nao empurra o player pra fora das plataformas
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
+        // Colisor calculado a partir do tamanho real do sprite, com a base do
+        // colisor no pe do sprite (assim o inimigo nao fica flutuando).
+        float ph = first != null ? first.rect.height / first.pixelsPerUnit : 2f;
+        float pw = first != null ? first.rect.width / first.pixelsPerUnit : 1f;
+
         BoxCollider2D col = temp.AddComponent<BoxCollider2D>();
-        col.size = new Vector2(0.9f, 1.5f);
-        col.offset = new Vector2(0f, -0.25f);
+        col.size = new Vector2(pw * 0.55f, ph * 0.72f);
+        col.offset = new Vector2(0f, -ph * 0.14f);
 
         EnemyPatrol patrol = temp.AddComponent<EnemyPatrol>();
         patrol.m_DeathFrames = deathFrames;
+        patrol.m_FacesLeft = facesLeft;
 
-        temp.AddComponent<SpriteAnimator>().SetFrames(frames, 10f);
+        if (frames != null && frames.Length > 0)
+        {
+            temp.AddComponent<SpriteAnimator>().SetFrames(frames, fps);
+        }
 
-        AddShadowChild(temp.transform, shadow, -0.95f, 1.2f);
-
-        return SaveAndClean(temp, "Enemy");
+        AddShadowChild(temp.transform, shadow, -ph * 0.5f + 0.05f, 1.0f, -1);
+        return SaveAndClean(temp, name);
     }
 
-    // Ajusta o prefab da raposa existente.
+    private static GameObject MakeFallingHead(Sprite sprite)
+    {
+        GameObject temp = new GameObject("FallingHead");
+        temp.transform.localScale = Vector3.one * 0.82f; // ~1,5x maior que antes
+
+        SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = 1;
+
+        // Solido (da pra subir em cima) e cinematico (movido por codigo).
+        Rigidbody2D rb = temp.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.freezeRotation = true;
+
+        BoxCollider2D col = temp.AddComponent<BoxCollider2D>();
+        col.isTrigger = false;
+        col.size = new Vector2(2.6f, 2.6f);
+
+        temp.AddComponent<FallingHead>();
+        SetLayer(temp, "Ground");
+        return SaveAndClean(temp, "FallingHead");
+    }
+
+    private static GameObject MakeSwing(Sprite chain, Sprite ball, Sprite anchor)
+    {
+        GameObject temp = new GameObject("Swing");
+        SwingingHazard swing = temp.AddComponent<SwingingHazard>();
+        swing.m_ChainSprite = chain;
+        swing.m_BallSprite = ball;
+        swing.m_AnchorSprite = anchor;
+        swing.m_Length = 3f;
+        swing.m_MaxAngleDeg = 55f;
+        swing.m_Speed = 2f;
+        swing.m_ChainLinks = 6;
+        return SaveAndClean(temp, "Swing");
+    }
+
+    private static GameObject MakeCheckpoint(Sprite sprite)
+    {
+        GameObject temp = new GameObject("Checkpoint");
+        temp.transform.localScale = Vector3.one * 0.6f;
+
+        SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = -4;
+
+        BoxCollider2D col = temp.AddComponent<BoxCollider2D>();
+        col.isTrigger = true;
+        col.size = new Vector2(2.4f, 4f);
+
+        temp.AddComponent<LevelFlag>();
+        return SaveAndClean(temp, "Checkpoint");
+    }
+
+    private static GameObject MakeEagle()
+    {
+        Sprite[] frames = LoadSeqAbs(EagleSheet, 1, 4);
+
+        GameObject temp = new GameObject("Eagle");
+        temp.transform.localScale = Vector3.one * 1.2f;
+
+        SpriteRenderer sr = temp.AddComponent<SpriteRenderer>();
+        sr.sprite = (frames != null && frames.Length > 0) ? frames[0] : null;
+        sr.sortingOrder = 20;
+
+        CircleCollider2D col = temp.AddComponent<CircleCollider2D>();
+        col.isTrigger = true;
+        col.radius = 0.9f;
+
+        temp.AddComponent<EagleBoss>();
+
+        if (frames != null && frames.Length > 0)
+        {
+            temp.AddComponent<SpriteAnimator>().SetFrames(frames, 12f);
+        }
+
+        return SaveAndClean(temp, "Eagle");
+    }
+
+    // ── Player ────────────────────────────────────────────────────────
     private static GameObject TweakPlayer(Sprite dust, Sprite shadow)
     {
         GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefab);
@@ -178,8 +313,9 @@ public static class LevelBuilder
         BoxCollider2D col = root.GetComponent<BoxCollider2D>();
         if (col != null)
         {
-            col.size = new Vector2(0.7f, 1.1f);
+            col.size = new Vector2(0.62f, 1.1f);
             col.offset = new Vector2(0f, -0.06f);
+            col.edgeRadius = 0.03f; // ajuda a nao "grudar" nas quinas
         }
 
         SpriteRenderer sr = root.GetComponent<SpriteRenderer>();
@@ -209,9 +345,11 @@ public static class LevelBuilder
         }
         so.ApplyModifiedPropertiesWithoutUndo();
 
+        AssignPlayerAnimations(root);
+
         if (root.transform.Find("Shadow") == null)
         {
-            AddShadowChild(root.transform, shadow, -0.7f, 1.1f);
+            AddShadowChild(root.transform, shadow, -0.62f, 1.0f, 5);
         }
 
         PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefab);
@@ -220,7 +358,59 @@ public static class LevelBuilder
         return AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
     }
 
-    private static void AddShadowChild(Transform parent, Sprite shadow, float localY, float scale)
+    private static void AssignPlayerAnimations(GameObject root)
+    {
+        PlayerAnimation anim = root.GetComponent<PlayerAnimation>();
+        if (anim == null)
+        {
+            anim = root.AddComponent<PlayerAnimation>();
+        }
+
+        Sprite[] idle = LoadSeqAbs(FoxySprites + "idle/player-idle-", 1, 4);
+        Sprite[] run = LoadSeqAbs(FoxySprites + "run/player-run-", 1, 6);
+        Sprite[] jump = LoadSeqAbs(FoxySprites + "jump/player-jump-", 1, 2);
+        Sprite jump2 = LoadSingle(FoxySprites + "jump/player-jump-2.png");
+        Sprite lookUp = LoadSingle(FoxySprites + "LookUp/lookUp.png");
+        Sprite[] roll = LoadSeqAbs(FoxySprites + "Roll/Roll", 1, 4);
+        Sprite[] hurt = LoadSeqAbs(FoxySprites + "hurt/player-hurt-", 1, 2);
+        Sprite dead = LoadSingle(FoxySprites + "Hurt2/hurt-2.png");
+
+        SerializedObject so = new SerializedObject(anim);
+        SetSprites(so, "m_IdleSprites", idle);
+        SetSprites(so, "m_RunSprites", run);
+        SetSprites(so, "m_JumpSprites", jump);
+        SetSprites(so, "m_FallSprites", jump2 != null ? new[] { jump2 } : null);
+        SetSprites(so, "m_LookUpSprites", lookUp != null ? new[] { lookUp } : null);
+        SetSprites(so, "m_RollSprites", roll);
+        SetSprites(so, "m_HurtSprites", hurt);
+        SetSprites(so, "m_DeadSprites", dead != null ? new[] { dead } : null);
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        SpriteRenderer sr = root.GetComponent<SpriteRenderer>();
+        if (sr != null && idle != null && idle.Length > 0)
+        {
+            sr.sprite = idle[0];
+        }
+    }
+
+    private static void SetSprites(SerializedObject so, string propName, Sprite[] sprites)
+    {
+        SerializedProperty prop = so.FindProperty(propName);
+        if (prop == null)
+        {
+            return;
+        }
+
+        int count = sprites != null ? sprites.Length : 0;
+        prop.arraySize = count;
+        for (int i = 0; i < count; i++)
+        {
+            prop.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
+        }
+    }
+
+    // ── Helpers de sprite / prefab ────────────────────────────────────
+    private static void AddShadowChild(Transform parent, Sprite shadow, float localY, float scale, int order)
     {
         if (shadow == null)
         {
@@ -235,7 +425,7 @@ public static class LevelBuilder
         SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
         sr.sprite = shadow;
         sr.color = new Color(0f, 0f, 0f, 0.3f);
-        sr.sortingOrder = -1;
+        sr.sortingOrder = order;
     }
 
     private static GameObject SaveAndClean(GameObject temp, string name)
@@ -245,10 +435,17 @@ public static class LevelBuilder
         return prefab;
     }
 
-    // ── Sprites ────────────────────────────────────────────────────────
+    private static void SetLayer(GameObject go, string layerName)
+    {
+        int layer = LayerMask.NameToLayer(layerName);
+        if (layer >= 0)
+        {
+            go.layer = layer;
+        }
+    }
+
     private static Sprite[] LoadGrassTiles()
     {
-        // 3x3 do bloco verde: cols 6,7,8 ; linhas (de cima) y160,y144,y128.
         int[] xs = { 96, 112, 128 };
         int[] ys = { 160, 144, 128 };
 
@@ -265,6 +462,21 @@ public static class LevelBuilder
         }
 
         return tiles;
+    }
+
+    private static Sprite[] LoadSpriteList(params string[] paths)
+    {
+        List<Sprite> list = new List<Sprite>();
+        foreach (string path in paths)
+        {
+            Sprite s = LoadSingle(path);
+            if (s != null)
+            {
+                list.Add(s);
+            }
+        }
+
+        return list.ToArray();
     }
 
     private static Sprite FindByRect(string sheet, int x, int y)
@@ -290,8 +502,18 @@ public static class LevelBuilder
             }
         }
 
-        Debug.LogWarning("LevelBuilder: nenhum sprite em " + sheetPath);
-        return null;
+        Sprite single = LoadSingle(sheetPath);
+        if (single == null)
+        {
+            Debug.LogWarning("LevelBuilder: nenhum sprite em " + sheetPath);
+        }
+
+        return single;
+    }
+
+    private static Sprite LoadSingle(string path)
+    {
+        return AssetDatabase.LoadAssetAtPath<Sprite>(path);
     }
 
     private static Sprite[] SortedSprites(string sheetPath)
@@ -305,16 +527,31 @@ public static class LevelBuilder
             }
         }
 
+        if (sprites.Count == 0)
+        {
+            Sprite single = LoadSingle(sheetPath);
+            if (single != null)
+            {
+                sprites.Add(single);
+            }
+        }
+
         sprites.Sort((a, b) => Trailing(a.name).CompareTo(Trailing(b.name)));
         return sprites.ToArray();
     }
 
-    private static Sprite[] LoadSeparate(string prefix, int count)
+    // Carrega arquivos separados tipo prefix1.png .. prefixN.png
+    private static Sprite[] LoadSeq(string prefix, int count)
+    {
+        return LoadSeqAbs(prefix, 1, count);
+    }
+
+    private static Sprite[] LoadSeqAbs(string prefix, int start, int end)
     {
         List<Sprite> sprites = new List<Sprite>();
-        for (int i = 1; i <= count; i++)
+        for (int i = start; i <= end; i++)
         {
-            Sprite s = AssetDatabase.LoadAssetAtPath<Sprite>($"{prefix}{i}.png");
+            Sprite s = LoadSingle($"{prefix}{i}.png");
             if (s != null)
             {
                 sprites.Add(s);
@@ -328,24 +565,6 @@ public static class LevelBuilder
     {
         Match m = Regex.Match(name, "(\\d+)$");
         return m.Success ? int.Parse(m.Value) : 0;
-    }
-
-    private static Sprite LoadTiledBackground(string sheetPath)
-    {
-        TextureImporter importer = AssetImporter.GetAtPath(sheetPath) as TextureImporter;
-        if (importer != null)
-        {
-            importer.textureType = TextureImporterType.Sprite;
-            importer.wrapMode = TextureWrapMode.Repeat;
-
-            TextureImporterSettings settings = new TextureImporterSettings();
-            importer.ReadTextureSettings(settings);
-            settings.spriteMeshType = SpriteMeshType.FullRect;
-            importer.SetTextureSettings(settings);
-            importer.SaveAndReimport();
-        }
-
-        return FirstSprite(sheetPath);
     }
 
     private static void EnsureFolder()

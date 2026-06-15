@@ -552,7 +552,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f795695e8558104da31ebe9ccc0cb14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  Score: 0
+  m_MaxLives: 3
 --- !u!4 &1367080050
 Transform:
   m_ObjectHideFlags: 0
@@ -608,13 +608,34 @@ MonoBehaviour:
   - {fileID: -1491133151, guid: be6cfcb08e4f947459f86f7593ef77ff, type: 3}
   - {fileID: 766590894, guid: be6cfcb08e4f947459f86f7593ef77ff, type: 3}
   - {fileID: -2112076611, guid: be6cfcb08e4f947459f86f7593ef77ff, type: 3}
-  m_SpikePrefab: {fileID: 6316626854617682956, guid: 7dc721c4a5b0d194a8912d99499d45ff, type: 3}
-  m_FruitPrefab: {fileID: 8881621383865769756, guid: d934c7960bbb06d4fac5faf3bdbbe2c2, type: 3}
-  m_FlagPrefab: {fileID: 2603548856645738877, guid: 75acc3dc62ddb714c89876b7ede2e9f1, type: 3}
-  m_EnemyPrefab: {fileID: 307828969268133887, guid: 1a0974bff5ab8e94ca401bc1d43d6a1e, type: 3}
-  m_PlayerPrefab: {fileID: 5177788386633961439, guid: bbf457d25de2825499f543761767d7cf, type: 3}
-  m_BackgroundSprite: {fileID: -4987337320017983735, guid: f1cb581e58d88d049ad7b0b80dd742f8, type: 3}
   m_ShadowSprite: {fileID: 4093480436322176185, guid: 3cf6322ca1c79ff44b899c7f8a35f7a1, type: 3}
+  m_SpikePrefab: {fileID: 6316626854617682956, guid: 7dc721c4a5b0d194a8912d99499d45ff, type: 3}
+  m_FruitPrefabs:
+  - {fileID: 1564565819606516558, guid: ecf344b9a481a3348abf319c21841f19, type: 3}
+  - {fileID: 7070430891388134710, guid: 3c2ae9b7099293e4e933ebf186805a1a, type: 3}
+  - {fileID: 3018346805065838378, guid: a5197d0cf1b43664790dfeb22cf02f10, type: 3}
+  - {fileID: 4667928984339828032, guid: 20cbaac0d3b2c2a4793091935ac1fba1, type: 3}
+  - {fileID: 1795824962567816458, guid: 7e2f814a6d1ce044aa5802f19f2aaeb0, type: 3}
+  - {fileID: 6635995480483669276, guid: 9492ad70b2395c84797e61f59231e991, type: 3}
+  - {fileID: 6723521171373809004, guid: 4b506d67b3452b54e92c16bd95ade8db, type: 3}
+  m_FrogPrefab: {fileID: 2992982528449175000, guid: 4117d2ff0375ca54fb45b8381e2d5929, type: 3}
+  m_OpossumPrefab: {fileID: 13260302574739371, guid: ec1c480c84bf2454a91e13e840df169a, type: 3}
+  m_FallingHeadPrefab: {fileID: 2357584404793367890, guid: 4dbc68121647fba45b5bdefc42387168, type: 3}
+  m_SwingPrefab: {fileID: 8458370746402955108, guid: 6ebd39a4a5800714c80ec0b2a6197aeb, type: 3}
+  m_CheckpointPrefab: {fileID: 1805859918107804552, guid: 31d915575a989e94684135a068c3630f, type: 3}
+  m_PlayerPrefab: {fileID: 5177788386633961439, guid: bbf457d25de2825499f543761767d7cf, type: 3}
+  m_EaglePrefab: {fileID: 5548972716296345690, guid: 8c4368b69c5c91f4d871bb3c285bb4b1, type: 3}
+  m_BackgroundSprite: {fileID: -4571828015118065507, guid: 0ec88301192ef82418dbcb3c1cd24c5e, type: 3}
+  m_SkySprite: {fileID: -4571828015118065507, guid: 0ec88301192ef82418dbcb3c1cd24c5e, type: 3}
+  m_TreeSprites:
+  - {fileID: -8667466294985060184, guid: fb83325459892cc4bbb874c6f7f28423, type: 3}
+  - {fileID: 4863554413037471907, guid: 9380e45524ff086409516ae5fcb2250c, type: 3}
+  m_GroundProps:
+  - {fileID: 6545382614753218560, guid: 2523d9e0af61d784c8e9d76e3d86546e, type: 3}
+  - {fileID: -2182124076254010665, guid: 467013ada86577c4fb56b1383b3273c0, type: 3}
+  - {fileID: 6705067628321220605, guid: 5e1d938b89d63b346b143fb6278c20bf, type: 3}
+  m_SignSprite: {fileID: 7168540986364394743, guid: 50f12948d93fca54b8cfb58a532389ce, type: 3}
+  m_LifeSprite: {fileID: -4570538037665054336, guid: de9f867627708964f8a1525b6be8f53d, type: 3}
 --- !u!4 &1407434739
 Transform:
   m_ObjectHideFlags: 0

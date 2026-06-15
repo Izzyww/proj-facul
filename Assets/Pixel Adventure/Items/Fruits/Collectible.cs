@@ -1,10 +1,12 @@
 using UnityEngine;
 
+// Fruta coletavel. Flutua so pra cima (nunca afunda na plataforma) e ao ser
+// pega solta um efeitinho e some.
 public class Collectible : MonoBehaviour
 {
     public Sprite[] m_PickupFrames;
 
-    private float m_FloatAmplitude = 0.12f;
+    private float m_FloatAmplitude = 0.18f;
     private float m_FloatFrequency = 2.5f;
 
     private Vector3 m_StartPosition;
@@ -17,7 +19,9 @@ public class Collectible : MonoBehaviour
 
     private void Update()
     {
-        transform.position = m_StartPosition + Vector3.up * (Mathf.Sin(Time.time * m_FloatFrequency) * m_FloatAmplitude);
+        // 0..1 (so sobe), entao a base nunca fica abaixo do ponto inicial.
+        float wave = (Mathf.Sin(Time.time * m_FloatFrequency) + 1f) * 0.5f;
+        transform.position = m_StartPosition + Vector3.up * (wave * m_FloatAmplitude);
     }
 
     private void OnTriggerEnter2D(Collider2D other)

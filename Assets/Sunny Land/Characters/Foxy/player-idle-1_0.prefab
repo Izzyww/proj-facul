@@ -261,8 +261,8 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.7, y: 1.1}
-  m_EdgeRadius: 0
+  m_Size: {x: 0.62, y: 1.1}
+  m_EdgeRadius: 0.03
 --- !u!114 &7453802204015117702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -304,8 +304,20 @@ MonoBehaviour:
   m_JumpSprites:
   - {fileID: -3687204204146959256, guid: aba8a3a554a4eff47b8be852008acbb6, type: 3}
   - {fileID: 5769193013992032563, guid: aa9c32b7c4ebcfa43b44268e62e44a18, type: 3}
-  m_GroundCheck: {fileID: 8844221100112233446}
-  m_GroundCheckRadius: 0.2
+  m_FallSprites:
+  - {fileID: 5769193013992032563, guid: aa9c32b7c4ebcfa43b44268e62e44a18, type: 3}
+  m_LookUpSprites:
+  - {fileID: 7792000402193126270, guid: 089476642527ffd4fba6776843639eb1, type: 3}
+  m_RollSprites:
+  - {fileID: -8074044839166553832, guid: e77bca0577f3e224bbb03ce921f9de47, type: 3}
+  - {fileID: 2467192528866668958, guid: a571a44eb8a64d7449fb4fde06f835ca, type: 3}
+  - {fileID: -8154049508614377748, guid: 0e7bddf7970f61847b97db59d6eb92c9, type: 3}
+  - {fileID: -652213032717980795, guid: 84c1624b6e3f3b14b83fc1c26fad15f8, type: 3}
+  m_HurtSprites:
+  - {fileID: 3377347301959049411, guid: 1f6608bc21acb8346bbc214ce5e33a53, type: 3}
+  - {fileID: 7638589178004061137, guid: 723f40bba4c9981428bdc50ec6b38a8e, type: 3}
+  m_DeadSprites:
+  - {fileID: -2333354213399122803, guid: 82981de480b189440939c954910eb51c, type: 3}
 --- !u!114 &5573828453725519767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -318,7 +330,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d2353201d2ddd147a8fe3b4683ec959, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
-  m_MaxHealth: 3
 --- !u!114 &6297300919451262156
 MonoBehaviour:
   m_ObjectHideFlags: 0

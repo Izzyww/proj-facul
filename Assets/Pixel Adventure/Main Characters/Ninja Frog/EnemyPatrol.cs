@@ -1,22 +1,30 @@
 using UnityEngine;
 
-// Inimigo que anda, vira na parede e na beirada do chao. Encostar de lado
-// causa dano; pular em cima (estilo Mario) mata o inimigo e quica o player.
+// Inimigo que patrulha andando de um lado pro outro. Vira quando encontra uma
+// parede/lateral de plataforma na altura do corpo (nao atravessa) e na beirada
+// (nao cai). Encostar de lado machuca o player; pular em cima OU rolar nele mata.
+// m_FacesLeft = true quando a arte original olha pra esquerda (ex: o gambá),
+// pra ele nao andar "de costas".
 public class EnemyPatrol : MonoBehaviour
 {
     public Sprite[] m_DeathFrames;
-
-    private float m_PatrolSpeed = 2f;
+    public float m_PatrolSpeed = 2f;
+    public bool m_FacesLeft;
 
     private Rigidbody2D m_Rigidbody2D;
+    private Collider2D m_Collider;
     private Transform m_Transform;
     private LayerMask m_GroundLayer;
     private int m_Direction = 1;
+    private bool m_Dead;
+
+    private int BaseSign => m_FacesLeft ? -1 : 1;
 
     private void Awake()
     {
         m_Transform = transform;
         m_GroundLayer = LayerMask.GetMask("Ground");
+        m_Collider = GetComponent<Collider2D>();
 
         m_Rigidbody2D = GetComponent<Rigidbody2D>();
         if (m_Rigidbody2D == null)
@@ -29,18 +37,25 @@ public class EnemyPatrol : MonoBehaviour
 
     private void Start()
     {
-        m_Direction = m_Transform.localScale.x >= 0f ? 1 : -1;
+        m_Direction = 1;
+        ApplyFacing();
     }
 
     private void FixedUpdate()
     {
-        Vector2 pos = m_Transform.position;
+        if (m_Dead)
+        {
+            return;
+        }
+
+        Bounds b = m_Collider != null ? m_Collider.bounds : new Bounds(m_Transform.position, Vector3.one);
         Vector2 dir = Vector2.right * m_Direction;
+        float halfW = b.extents.x + 0.05f;
 
-        Vector2 wallOrigin = pos + dir * 0.5f + Vector2.up * (-0.3f);
-        Vector2 ledgeOrigin = pos + dir * 0.6f + Vector2.up * (-0.95f);
+        Vector2 bodyOrigin = new Vector2(b.center.x, b.min.y + 0.25f);
+        bool wallAhead = Physics2D.Raycast(bodyOrigin, dir, halfW + 0.15f, m_GroundLayer).collider != null;
 
-        bool wallAhead = Physics2D.Raycast(wallOrigin, dir, 0.3f, m_GroundLayer).collider != null;
+        Vector2 ledgeOrigin = new Vector2(b.center.x + m_Direction * (halfW + 0.1f), b.min.y + 0.1f);
         bool groundAhead = Physics2D.Raycast(ledgeOrigin, Vector2.down, 0.6f, m_GroundLayer).collider != null;
 
         if (wallAhead || !groundAhead)
@@ -54,39 +69,62 @@ public class EnemyPatrol : MonoBehaviour
     private void Flip()
     {
         m_Direction *= -1;
+        ApplyFacing();
+    }
 
+    private void ApplyFacing()
+    {
         Vector3 scale = m_Transform.localScale;
-        scale.x = Mathf.Abs(scale.x) * m_Direction;
+        scale.x = Mathf.Abs(scale.x) * m_Direction * BaseSign;
         m_Transform.localScale = scale;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!collision.collider.CompareTag("Player"))
+        HandlePlayer(collision.collider);
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        HandlePlayer(collision.collider);
+    }
+
+    private void HandlePlayer(Collider2D other)
+    {
+        if (m_Dead || !other.CompareTag("Player"))
         {
             return;
         }
 
-        Rigidbody2D playerBody = collision.collider.GetComponent<Rigidbody2D>();
-        bool fromAbove = collision.collider.transform.position.y - m_Transform.position.y > 0.55f;
+        PlayerController controller = other.GetComponent<PlayerController>();
+        Rigidbody2D playerBody = other.attachedRigidbody;
+
+        if (controller != null && controller.IsRolling)
+        {
+            Die(null);
+            return;
+        }
+
+        float enemyMidY = m_Collider != null ? m_Collider.bounds.center.y : m_Transform.position.y;
+        bool fromAbove = other.bounds.min.y >= enemyMidY;
         bool falling = playerBody == null || playerBody.linearVelocity.y < 1f;
 
         if (fromAbove && falling)
         {
-            Stomped(playerBody);
+            Die(playerBody);
+            return;
         }
-        else
+
+        PlayerHealth health = other.GetComponent<PlayerHealth>();
+        if (health != null)
         {
-            PlayerHealth health = collision.collider.GetComponent<PlayerHealth>();
-            if (health != null)
-            {
-                health.TakeDamage(m_Transform.position);
-            }
+            health.TakeDamage(m_Transform.position);
         }
     }
 
-    private void Stomped(Rigidbody2D playerBody)
+    private void Die(Rigidbody2D playerBody)
     {
+        m_Dead = true;
         OneShotVfx.Spawn(m_Transform.position, m_DeathFrames, 14f, 0.5f, Vector2.zero, 1, 1f);
 
         if (playerBody != null)
